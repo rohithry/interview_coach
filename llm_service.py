@@ -6,9 +6,14 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 AI_AVAILABLE = True if OPENROUTER_API_KEY else False
 
+
 def ask_ai(prompt):
+    """
+    Returns AI response if API works.
+    Returns None if API fails (rate limit, timeout, model down).
+    """
     if not AI_AVAILABLE:
-        return "AI not available."
+        return None
 
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
@@ -21,12 +26,16 @@ def ask_ai(prompt):
             {"role": "system", "content": "You are a professional interviewer and evaluator."},
             {"role": "user", "content": prompt}
         ],
-        "max_tokens": 700,
+        "max_tokens": 500,
         "temperature": 0.6
     }
 
-    r = requests.post(API_URL, headers=headers, json=payload)
-    if r.status_code == 200:
-        return r.json()["choices"][0]["message"]["content"]
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=15)
+        if response.status_code == 200:
+            return response.json()["choices"][0]["message"]["content"]
+    except:
+        pass
 
-    return "AI error"
+    return None  
+

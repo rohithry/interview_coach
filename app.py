@@ -21,21 +21,21 @@ mode = st.sidebar.selectbox(
 )
 
 if AI_AVAILABLE:
-    st.sidebar.success("🟢 AI Mode (Online)")
+    st.sidebar.success("🟢 AI Mode Enabled")
 else:
-    st.sidebar.warning("🟡 Offline Mode (No API key)")
+    st.sidebar.warning("🟡 Offline Mode")
 
 # ---------------- UI ----------------
 st.markdown("<h1 style='text-align:center;'>🤖 Smart Interview Simulator</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;'>Online + Offline | HR • Technical • Coding</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;'>Hybrid Mode | Online + Offline</p>", unsafe_allow_html=True)
 st.markdown("---")
 
 st.markdown("### 🎥 Video Presence Check")
 st.camera_input("Please keep your camera ON")
 
-# ---------------- START INTERVIEW ----------------
+# ---------------- START ----------------
 if st.button("▶ Start Interview"):
-    st.session_state.questions = prompts.get_questions(mode, AI_AVAILABLE)
+    st.session_state.questions = prompts.get_questions(mode)
     st.session_state.index = 0
     st.session_state.feedback = ""
     st.session_state.started = True
@@ -43,19 +43,17 @@ if st.button("▶ Start Interview"):
 # ---------------- INTERVIEW FLOW ----------------
 if st.session_state.started and st.session_state.index < len(st.session_state.questions):
     question = st.session_state.questions[st.session_state.index]
-    st.subheader(f"Q{st.session_state.index+1}. {question}")
+    st.subheader(f"Q{st.session_state.index + 1}. {question}")
 
     # -------- CODING ROUND --------
     if mode == "Coding Round":
         code = st.text_area("Write your code here", height=200)
 
         if st.button("Evaluate Code"):
-            if AI_AVAILABLE:
-                st.session_state.feedback = ask_ai(
-                    prompts.ai_evaluate_code(code)
-                )
-            else:
-                st.session_state.feedback = evaluator.evaluate_code(code)
+            ai_result = ask_ai(prompts.ai_evaluate_code(code))
+            st.session_state.feedback = (
+                ai_result if ai_result else evaluator.evaluate_code(code)
+            )
 
     # -------- HR / TECH ROUND --------
     else:
@@ -63,12 +61,10 @@ if st.session_state.started and st.session_state.index < len(st.session_state.qu
         col1, col2 = st.columns(2)
 
         if col1.button("Submit Text Answer"):
-            if AI_AVAILABLE:
-                st.session_state.feedback = ask_ai(
-                    prompts.ai_evaluate_answer(question, answer)
-                )
-            else:
-                st.session_state.feedback = evaluator.evaluate_answer(answer)
+            ai_result = ask_ai(prompts.ai_evaluate_answer(question, answer))
+            st.session_state.feedback = (
+                ai_result if ai_result else evaluator.evaluate_answer(answer)
+            )
 
         with col2:
             st.markdown("### 🎤 Voice Answer (WAV upload)")
@@ -82,12 +78,10 @@ if st.session_state.started and st.session_state.index < len(st.session_state.qu
                     text = recognizer.recognize_google(audio)
                     st.write("🗣 Recognized:", text)
 
-                    if AI_AVAILABLE:
-                        st.session_state.feedback = ask_ai(
-                            prompts.ai_evaluate_answer(question, text)
-                        )
-                    else:
-                        st.session_state.feedback = evaluator.evaluate_answer(text)
+                    ai_result = ask_ai(prompts.ai_evaluate_answer(question, text))
+                    st.session_state.feedback = (
+                        ai_result if ai_result else evaluator.evaluate_answer(text)
+                    )
                 except:
                     st.error("Audio not clear")
 
